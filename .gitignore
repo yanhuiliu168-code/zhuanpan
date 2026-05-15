@@ -1,0 +1,15 @@
+# 小程序相关
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+project.private.config.json
+
+# 编辑器及系统文件
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.user
+*.swp

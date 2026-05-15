@@ -1,0 +1,22 @@
+<!--pages/edit/edit.wxml-->
+<view class="container">
+  <view class="form-group">
+    <view class="label">转盘名称</view>
+    <input class="input" value="{{name}}" bindinput="onNameInput" placeholder="请输入转盘名称（如：周末专属奖励）" />
+  </view>
+
+  <view class="section-title">转盘选项 ({{items.length}}个)</view>
+  <view class="items-list">
+    <view class="item-row" wx:for="{{items}}" wx:key="index">
+      <view class="color-picker" style="background-color: {{item.color}}" bindtap="changeColor" data-index="{{index}}"></view>
+      <input class="item-input" value="{{item.text}}" bindinput="onItemInput" data-index="{{index}}" placeholder="请输入内容" />
+      <view class="btn-del-item" bindtap="deleteItem" data-index="{{index}}" wx:if="{{items.length > 2}}">×</view>
+    </view>
+  </view>
+
+  <button class="btn-add-item" bindtap="addItem" wx:if="{{items.length < 12}}">+ 添加选项</button>
+
+  <view class="footer">
+    <button class="btn-save" bindtap="saveRoulette">保存</button>
+  </view>
+</view>

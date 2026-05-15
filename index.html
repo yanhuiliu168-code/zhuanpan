@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <!-- 移动端适配核心 meta 标签 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>儿童奖惩转盘</title>
+  <style>
+    /* 基础样式重置与 rpx 模拟 (限制最大宽度，适配 PC 端) */
+    html {
+      /* 移动端: 1rem = 100rpx (100vw / 7.5); PC端限制最大视口宽度为 540px */
+      font-size: calc(min(100vw, 540px) / 7.5);
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Segoe UI, Arial, Roboto, 'PingFang SC', sans-serif;
+      background-color: #FFF9E6; /* 默认暖色调 */
+      -webkit-tap-highlight-color: transparent;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center; /* 居中显示 */
+      background: #e0e0e0; /* PC端背景色 */
+    }
+    
+    /* 主容器限制宽度，模拟手机屏幕 */
+    #app {
+      width: 100%;
+      max-width: 540px;
+      height: 100%;
+      background-color: #FFF9E6;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: background-color 0.3s;
+      height: 100%;
+    }
+    .theme-reward { background-color: #FFF9E6; }
+    .theme-punishment { background-color: #F0F8FF; }
+
+    .mode-switch {
+      display: flex;
+      width: 60%;
+      margin-top: 0.4rem;
+      background-color: rgba(0, 0, 0, 0.05);
+      border-radius: 0.4rem;
+      padding: 0.06rem;
+    }
+    .switch-item {
+      flex: 1;
+      text-align: center;
+      padding: 0.16rem 0;
+      border-radius: 0.34rem;
+      font-size: 0.28rem;
+      color: #666;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .theme-reward .switch-item.active { background-color: #FF8C00; color: #fff; font-weight: bold; }
+    .theme-punishment .switch-item.active { background-color: #4682B4; color: #fff; font-weight: bold; }
+
+    .roulette-title {
+      margin-top: 0.4rem;
+      font-size: 0.36rem;
+      font-weight: bold;
+      color: #333;
+      display: flex;
+      align-items: center;
+      padding: 0.1rem 0.3rem;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 0.3rem;
+      cursor: pointer;
+    }
+    .roulette-title .arrow {
+      font-size: 0.24rem;
+      color: #999;
+      margin-left: 0.1rem;
+      font-weight: normal;
+    }
+
+    .roulette-container {
+      margin-top: 0.8rem;
+      position: relative;
+      width: 6rem;
+      height: 6rem;
+    }
+    .roulette-bg {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background-color: #fff;
+      box-shadow: 0 0.1rem 0.3rem rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+      border: 0.1rem solid #fff;
+      box-sizing: border-box;
+    }
+    .roulette-wheel {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .wheel-line {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 0.04rem;
+      height: 50%;
+      background-color: #fff;
+      transform-origin: 50% 100%;
+      margin-left: -0.02rem;
+      z-index: 2;
+    }
+    .wheel-text-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 3;
+    }
+    .wheel-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform-origin: 50% 50%;
+    }
+    .text-content {
+      position: absolute;
+      top: 0.3rem;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 0.36rem;
+      font-weight: bold;
+      color: #fff;
+      width: 1.4rem;
+      line-height: 1.4;
+      word-break: break-all;
+      text-shadow: 0 0.04rem 0.08rem rgba(0,0,0,0.5), 0 0.02rem 0.04rem rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    .roulette-pointer {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      width: 0;
+      height: 0;
+      border-left: 0.2rem solid transparent;
+      border-right: 0.2rem solid transparent;
+      border-bottom: 0.6rem solid #FF4500;
+      z-index: 10;
+      margin-top: -0.3rem;
+    }
+    .roulette-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 1.2rem;
+      height: 1.2rem;
+      background-color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0.04rem 0.1rem rgba(0,0,0,0.2);
+      z-index: 11;
+      font-size: 0.32rem;
+      font-weight: bold;
+      color: #FF4500;
+      cursor: pointer;
+    }
+
+    /* 弹窗样式 */
+    .mask {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 999;
+      display: none; /* 默认隐藏 */
+      align-items: center;
+      justify-content: center;
+    }
+    .mask.show {
+      display: flex;
+    }
+    
+    .dialog {
+      width: 80%;
+      background: #fff;
+      border-radius: 0.2rem;
+      padding: 0.4rem;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .dialog-title { font-size: 0.36rem; font-weight: bold; margin-bottom: 0.4rem; }
+    .dialog-content { font-size: 0.4rem; font-weight: bold; margin-bottom: 0.6rem; }
+    
+    .btn-close {
+      background: #FF8C00;
+      color: #fff;
+      border-radius: 0.4rem;
+      width: 80%;
+      padding: 0.2rem 0;
+      border: none;
+      font-size: 0.32rem;
+      cursor: pointer;
+    }
+    .theme-punishment .btn-close { background: #4682B4; }
+
+    /* 控制面板 */
+    .control-panel {
+      width: 80%;
+      background: #fff;
+      border-radius: 0.2rem;
+      padding: 0.4rem;
+      box-sizing: border-box;
+    }
+    .panel-title {
+      text-align: center;
+      font-size: 0.32rem;
+      font-weight: bold;
+      margin-bottom: 0.3rem;
+    }
+    .panel-mode {
+      display: flex;
+      align-items: center;
+      font-size: 0.28rem;
+      margin-bottom: 0.2rem;
+      justify-content: center;
+    }
+    .panel-mode label {
+      margin-left: 0.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    .panel-mode input[type="radio"] {
+      margin-right: 0.08rem;
+    }
+    .panel-queue {
+      font-size: 0.26rem;
+      color: #666;
+      margin-bottom: 0.2rem;
+      padding: 0.1rem;
+      background: #f5f5f5;
+      border-radius: 0.1rem;
+      max-height: 1.2rem;
+      overflow-y: auto;
+      text-align: left;
+    }
+    .queue-item {
+      color: #FF4500;
+      font-weight: bold;
+    }
+    .panel-list {
+      max-height: 4rem;
+      overflow-y: auto;
+    }
+    .panel-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.15rem 0;
+      border-bottom: 1px solid #eee;
+    }
+    .item-name {
+      flex: 1;
+      font-size: 0.28rem;
+      text-align: left;
+      color: #333;
+      cursor: pointer;
+    }
+    .add-tip {
+      font-size: 0.22rem;
+      color: #999;
+      margin-left: 0.1rem;
+    }
+    .item-weight {
+      display: flex;
+      align-items: center;
+      font-size: 0.26rem;
+      color: #666;
+    }
+    .weight-input {
+      width: 0.6rem;
+      height: 0.4rem;
+      border: 1px solid #ccc;
+      border-radius: 0.06rem;
+      text-align: center;
+      margin-left: 0.1rem;
+      font-size: 0.26rem;
+      outline: none;
+    }
+    .panel-actions {
+      display: flex;
+      margin-top: 0.3rem;
+      justify-content: space-between;
+    }
+    .panel-actions button {
+      width: 30%;
+      font-size: 0.28rem;
+      padding: 0.15rem 0;
+      border: none;
+      border-radius: 0.1rem;
+      cursor: pointer;
+    }
+    .btn-clear { background: #FFE4E1; color: #FF4500; }
+    .btn-cancel { background: #eee; color: #333; }
+    .btn-confirm { background: #FF4500; color: #fff; }
+
+    /* ================= 页面层级与管理编辑页样式 ================= */
+    .page-layer {
+      display: none;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: #f7f8fa;
+      z-index: 100;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+    .page-layer.active { display: flex; }
+    #main-page { background: transparent; z-index: 1; align-items: center; }
+
+    /* 管理页样式 */
+    .header-bar { padding: 0.3rem; display: flex; align-items: center; background: #fff; position: sticky; top: 0; z-index: 10; box-shadow: 0 0.02rem 0.1rem rgba(0,0,0,0.05); flex-shrink: 0; }
+    .btn-back { font-size: 0.32rem; color: #666; margin-right: 0.3rem; cursor: pointer; }
+    .header-title { font-size: 0.36rem; font-weight: bold; color: #333; }
+    .manage-list { flex: 1; padding: 0.3rem; overflow-y: auto; }
+    .manage-item { background: #fff; padding: 0.3rem; border-radius: 0.2rem; margin-bottom: 0.2rem; display: flex; justify-content: space-between; align-items: center; border: 0.04rem solid transparent; cursor: pointer; box-shadow: 0 0.04rem 0.12rem rgba(0,0,0,0.02); }
+    .manage-item.active { border-color: #FF8C00; background: #FFF9E6; }
+    .manage-item-info { display: flex; align-items: center; }
+    .manage-item-name { font-size: 0.32rem; font-weight: 500; color: #333; }
+    .manage-item-tag { font-size: 0.2rem; background: #eee; color: #999; padding: 0.04rem 0.12rem; border-radius: 0.1rem; margin-left: 0.2rem; }
+    .manage-item-actions button { font-size: 0.24rem; padding: 0.1rem 0.2rem; margin-left: 0.1rem; border: none; border-radius: 0.3rem; cursor: pointer; }
+    .btn-edit { background: #f0f0f0; color: #333; }
+    .btn-delete { background: #FFE4E1; color: #FF4500; }
+    .btn-add-main { background: #FF8C00; color: #fff; border-radius: 0.5rem; font-size: 0.32rem; padding: 0.2rem 0; width: 90%; margin: 0.2rem auto 0.4rem auto; border: none; box-shadow: 0 0.08rem 0.2rem rgba(255,140,0,0.3); cursor: pointer; display: block; flex-shrink: 0; }
+
+    /* 编辑页样式 */
+    .edit-group { background: #fff; padding: 0.3rem; border-radius: 0.2rem; margin: 0.3rem; }
+    .edit-label { font-size: 0.3rem; font-weight: bold; margin-bottom: 0.2rem; color: #333; }
+    .edit-input { width: 100%; font-size: 0.28rem; padding: 0.2rem; background: #f5f5f5; border: none; border-radius: 0.1rem; box-sizing: border-box; outline: none; }
+    .edit-item-row { display: flex; align-items: center; padding: 0.2rem 0; border-bottom: 1px solid #eee; }
+    .edit-item-row:last-child { border-bottom: none; }
+    .edit-color-picker { width: 0.5rem; height: 0.5rem; border-radius: 50%; margin-right: 0.2rem; border: 0.04rem solid #ddd; cursor: pointer; flex-shrink: 0; }
+    .edit-item-input { flex: 1; font-size: 0.28rem; padding: 0.1rem; border: none; background: transparent; outline: none; }
+    .btn-del-item { width: 0.5rem; height: 0.5rem; line-height: 0.46rem; text-align: center; border-radius: 50%; background: #FFE4E1; color: #FF4500; font-size: 0.4rem; margin-left: 0.2rem; cursor: pointer; flex-shrink: 0; border: none; padding: 0; }
+    .btn-add-item { margin: 0 0.3rem; background: #fff; color: #FF8C00; border: 2px dashed #FF8C00; border-radius: 0.2rem; font-size: 0.3rem; padding: 0.2rem 0; cursor: pointer; width: calc(100% - 0.6rem); }
+  </style>
+</head>
+<body>
+
+<div id="app" class="container theme-reward">
+  <!-- Main Page -->
+  <div id="main-page" class="page-layer active">
+    <!-- 模式切换 -->
+    <div class="mode-switch">
+    <div class="switch-item active" id="btn-reward" onclick="switchMode('reward')">奖励模式</div>
+    <div class="switch-item" id="btn-punish" onclick="switchMode('punishment')">惩罚模式</div>
+  </div>
+
+  <!-- 标题 -->
+  <div class="roulette-title" onclick="goToManage()">
+    <span id="roulette-name">加载中...</span>
+    <span class="arrow">切换 &gt;</span>
+  </div>
+
+  <!-- 转盘 -->
+  <div class="roulette-container">
+    <div class="roulette-bg">
+      <div id="wheel" class="roulette-wheel">
+        <div id="wheel-lines"></div>
+        <div id="wheel-texts" class="wheel-text-container"></div>
+      </div>
+      <div class="roulette-pointer"></div>
+      <div class="roulette-btn" onclick="onCenterClick()">
+        <span>开始</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结果弹窗 -->
+  <div id="result-mask" class="mask">
+    <div class="dialog">
+      <div id="result-title" class="dialog-title">🎉 恭喜获得奖励</div>
+      <div id="result-content" class="dialog-content"></div>
+      <button class="btn-close" onclick="closeResult()">确定</button>
+    </div>
+  </div>
+
+  <!-- 隐藏控制面板 -->
+  <div id="control-mask" class="mask">
+    <div class="control-panel">
+      <div class="panel-title">设定结果序列与权重（仅家长可见）</div>
+      
+      <div class="panel-mode">
+        默认抽取：
+        <label><input type="radio" name="fallbackMode" value="random" onchange="onModeChange(this.value)"> 纯随机</label>
+        <label><input type="radio" name="fallbackMode" value="weight" onchange="onModeChange(this.value)"> 按权重</label>
+      </div>
+
+      <div class="panel-queue" id="panel-queue">
+        当前序列：<span style="color: #999">空</span>
+      </div>
+      <div id="control-list" class="panel-list">
+        <!-- 动态渲染选项 -->
+      </div>
+      <div class="panel-actions">
+        <button class="btn-clear" onclick="clearTarget()">清空</button>
+        <button class="btn-cancel" onclick="closeControlPanel()">取消</button>
+        <button class="btn-confirm" onclick="confirmControlTarget()">确定</button>
+      </div>
+    </div>
+  </div>
+  </div> <!-- End Main Page -->
+
+  <!-- Manage Page -->
+  <div id="manage-page" class="page-layer">
+    <div class="header-bar">
+      <div class="btn-back" onclick="closeManage()">&lt; 返回</div>
+      <div class="header-title" id="manage-title">管理转盘</div>
+    </div>
+    <div class="manage-list" id="manage-list-container">
+      <!-- 动态渲染列表 -->
+    </div>
+    <div>
+      <button class="btn-add-main" id="btn-add-roulette" onclick="goToEdit()">+ 新增转盘</button>
+    </div>
+  </div>
+
+  <!-- Edit Page -->
+  <div id="edit-page" class="page-layer">
+    <div class="header-bar">
+      <div class="btn-back" onclick="closeEdit()">&lt; 返回</div>
+      <div class="header-title" id="edit-title">编辑转盘</div>
+    </div>
+    <div class="edit-group">
+      <div class="edit-label">转盘名称</div>
+      <input id="edit-name-input" class="edit-input" placeholder="请输入转盘名称" oninput="onEditNameInput(event)" />
+    </div>
+    <div class="edit-label" id="edit-items-count" style="padding-left: 0.4rem;">转盘选项</div>
+    <div class="edit-group" id="edit-items-container" style="margin-top: 0;">
+      <!-- 动态渲染选项输入 -->
+    </div>
+    <button class="btn-add-item" onclick="addEditItem()">+ 添加选项</button>
+    <button class="btn-add-main" onclick="saveRoulette()" style="margin-top: 0.6rem;">保存</button>
+  </div>
+</div>
+
+<script>
+  // 简单提取 app.js 中的默认数据逻辑
+  function getRoulettes() {
+    let data = localStorage.getItem('roulettes');
+    if (!data) {
+      data = [
+        {
+          id: '1', name: '日常奖励', type: 'reward', isDefault: true,
+          items: [
+            { text: '多看20分钟绘本', color: '#FF7F50' },
+            { text: '免一次家务', color: '#6495ED' },
+            { text: '获得小贴纸', color: '#FFB6C1' },
+            { text: '看一集动画片', color: '#32CD32' },
+            { text: '吃一个小零食', color: '#FFA500' },
+            { text: '去公园玩一次', color: '#9370DB' }
+          ]
+        },
+        {
+          id: '2', name: '日常惩罚', type: 'punishment', isDefault: true,
+          items: [
+            { text: '收拾玩具', color: '#4682B4' },
+            { text: '背诵一首古诗', color: '#D2B48C' },
+            { text: '禁止看电视30分钟', color: '#778899' },
+            { text: '罚站5分钟', color: '#5F9EA0' },
+            { text: '写一篇日记', color: '#BC8F8F' },
+            { text: '没收电子产品一天', color: '#708090' }
+          ]
+        }
+      ];
+      localStorage.setItem('roulettes', JSON.stringify(data));
+    } else {
+      data = JSON.parse(data);
+    }
+    return data;
+  }
+
+  let currentType = 'reward';
+  let currentRoulette = null;
+  let rotateAngle = 0;
+  let isSpinning = false;
+  
+  // 隐藏控制相关
+  let clickCount = 0;
+  let lastClickTime = 0;
+  let controlCooling = false;
+  let targetQueue = [];
+  let tempTargetQueue = [];
+  let tempFallbackMode = 'random';
+  let tempWeights = [];
+  let spinTimer = null;
+  let resultTimeout = null;
+  
+  function renderWheel() {
+    const data = getRoulettes();
+    const targetId = localStorage.getItem(currentType === 'reward' ? 'currentRewardId' : 'currentPunishmentId');
+    currentRoulette = data.find(r => r.id === targetId);
+    if (!currentRoulette) {
+      currentRoulette = data.find(r => r.type === currentType);
+    }
+    
+    document.getElementById('roulette-name').innerText = currentRoulette.name;
+    
+    const items = currentRoulette.items;
+    const total = items.length;
+    
+    // 渲染背景 (conic-gradient)
+    let gradientStr = 'conic-gradient(';
+    items.forEach((item, index) => {
+      const startDeg = (index * 360) / total;
+      const endDeg = ((index + 1) * 360) / total;
+      gradientStr += `${item.color} ${startDeg}deg ${endDeg}deg`;
+      if (index < total - 1) gradientStr += ', ';
+    });
+    gradientStr += ')';
+    const wheel = document.getElementById('wheel');
+    wheel.style.background = gradientStr;
+    
+    // 渲染线条和文字
+    let linesHtml = '';
+    let textsHtml = '';
+    items.forEach((item, index) => {
+      const lineDeg = index * (360 / total);
+      linesHtml += `<div class="wheel-line" style="transform: rotate(${lineDeg}deg);"></div>`;
+      
+      const textDeg = index * (360 / total) + (180 / total);
+      textsHtml += `
+        <div class="wheel-text" style="transform: rotate(${textDeg}deg);">
+          <span class="text-content">${item.text}</span>
+        </div>
+      `;
+    });
+    document.getElementById('wheel-lines').innerHTML = linesHtml;
+    document.getElementById('wheel-texts').innerHTML = textsHtml;
+  }
+
+  function switchMode(type) {
+    if (isSpinning) return;
+    currentType = type;
+    document.getElementById('app').className = `container theme-${type}`;
+    
+    if(type === 'reward') {
+      document.getElementById('btn-reward').classList.add('active');
+      document.getElementById('btn-punish').classList.remove('active');
+    } else {
+      document.getElementById('btn-reward').classList.remove('active');
+      document.getElementById('btn-punish').classList.add('active');
+    }
+    
+    rotateAngle = 0;
+    const wheel = document.getElementById('wheel');
+    wheel.style.transition = 'none';
+    wheel.style.transform = `rotate(0deg)`;
+    renderWheel();
+  }
+
+  let lastSpinTime = 0;
+  function onCenterClick() {
+    const now = Date.now();
+
+    // 1. 优先处理隐藏控制唤醒 (连续5次，间隔<=500ms) - 无视 isSpinning 状态
+    if (!controlCooling) {
+      if (now - lastClickTime <= 500) {
+        clickCount++;
+      } else {
+        clickCount = 1;
+      }
+      lastClickTime = now;
+
+      if (clickCount >= 5) {
+        clickCount = 0;
+        
+        // 触发隐藏功能：如果转盘已经开始转动，立即停止
+        if (spinTimer) {
+          clearTimeout(spinTimer);
+          spinTimer = null;
+        }
+        if (resultTimeout) {
+          clearTimeout(resultTimeout);
+          resultTimeout = null;
+        }
+        
+        // 瞬间重置转盘状态
+        isSpinning = false;
+        const wheel = document.getElementById('wheel');
+        wheel.style.transition = 'none';
+        rotateAngle = 0;
+        wheel.style.transform = `rotate(0deg)`;
+        
+        showHiddenControl();
+        return; // 唤醒面板后直接返回
+      }
+    }
+
+    // 2. 如果当前正在转动中，普通的点击不生效
+    if (isSpinning) return;
+
+    // 3. 正常点击的防抖逻辑 800ms
+    if (now - lastSpinTime < 800) return;
+    lastSpinTime = now;
+    
+    // 4. 为了给“连击”留出判定时间，同时不让正常点击显得太卡顿，延迟 200ms 启动转动
+    spinTimer = setTimeout(() => {
+      if (clickCount < 2) {
+        startSpin(-1);
+      }
+    }, 200);
+  }
+
+  function showHiddenControl() {
+    tempTargetQueue = [...targetQueue];
+    tempFallbackMode = currentRoulette.fallbackMode || 'random';
+    tempWeights = currentRoulette.items.map(item => item.weight !== undefined ? item.weight : 1);
+    
+    document.querySelectorAll('input[name="fallbackMode"]').forEach(radio => {
+      radio.checked = (radio.value === tempFallbackMode);
+    });
+
+    renderControlPanel();
+    
+    document.getElementById('control-mask').classList.add('show');
+    
+    // 触发冷却 2s
+    controlCooling = true;
+    setTimeout(() => {
+      controlCooling = false;
+    }, 2000);
+  }
+
+  function onModeChange(val) {
+    tempFallbackMode = val;
+    renderControlPanel();
+  }
+
+  function onWeightInput(index, val) {
+    let w = parseInt(val);
+    if (isNaN(w) || w < 0) w = 0;
+    tempWeights[index] = w;
+  }
+
+  function renderControlPanel() {
+    const list = document.getElementById('control-list');
+    let html = '';
+    currentRoulette.items.forEach((item, index) => {
+      let weightHtml = tempFallbackMode === 'weight' ? 
+        `<div class="item-weight">权重: <input type="number" class="weight-input" value="${tempWeights[index]}" oninput="onWeightInput(${index}, this.value)"></div>` : '';
+      
+      html += `
+        <div class="panel-item-row">
+          <div class="item-name" onclick="selectTarget(${index})">${item.text} <span class="add-tip">(点我加入序列)</span></div>
+          ${weightHtml}
+        </div>
+      `;
+    });
+    list.innerHTML = html;
+
+    const queueDiv = document.getElementById('panel-queue');
+    if (tempTargetQueue.length === 0) {
+      queueDiv.innerHTML = '当前序列：<span style="color: #999">空</span>';
+    } else {
+      let qHtml = '当前序列：';
+      tempTargetQueue.forEach((idx, i) => {
+        qHtml += `<span class="queue-item">${currentRoulette.items[idx].text}</span>`;
+        if (i < tempTargetQueue.length - 1) qHtml += ' ➔ ';
+      });
+      queueDiv.innerHTML = qHtml;
+    }
+  }
+
+  function selectTarget(index) {
+    tempTargetQueue.push(index);
+    renderControlPanel();
+  }
+
+  function clearTarget() {
+    tempTargetQueue = [];
+    renderControlPanel();
+  }
+
+  function closeControlPanel() {
+    document.getElementById('control-mask').classList.remove('show');
+    tempTargetQueue = [];
+  }
+
+  function confirmControlTarget() {
+    targetQueue = [...tempTargetQueue];
+    
+    currentRoulette.fallbackMode = tempFallbackMode;
+    currentRoulette.items.forEach((item, index) => {
+      item.weight = tempWeights[index];
+    });
+    
+    let data = getRoulettes();
+    const idx = data.findIndex(r => r.id === currentRoulette.id);
+    if (idx > -1) {
+      data[idx] = currentRoulette;
+      localStorage.setItem('roulettes', JSON.stringify(data));
+    }
+
+    document.getElementById('control-mask').classList.remove('show');
+    
+    if (targetQueue.length > 0) {
+      alert(`已设定接下来的 ${targetQueue.length} 次结果`);
+    } else {
+      alert(`已应用${tempFallbackMode === 'weight' ? '权重' : '随机'}模式`);
+    }
+  }
+
+  function startSpin() {
+    if (isSpinning) return;
+    
+    const total = currentRoulette.items.length;
+    if (total === 0) return;
+
+    isSpinning = true;
+
+    let winIndex = -1;
+    if (targetQueue.length > 0) {
+      winIndex = targetQueue.shift();
+    } else {
+      const mode = currentRoulette.fallbackMode || 'random';
+      if (mode === 'weight') {
+        let totalWeight = 0;
+        currentRoulette.items.forEach(item => {
+          let w = parseInt(item.weight);
+          if (isNaN(w) || w < 0) w = 0;
+          totalWeight += w;
+        });
+        
+        if (totalWeight > 0) {
+          let random = Math.floor(Math.random() * totalWeight);
+          for (let i = 0; i < total; i++) {
+            let w = parseInt(currentRoulette.items[i].weight);
+            if (isNaN(w) || w < 0) w = 0;
+            if (random < w) {
+              winIndex = i;
+              break;
+            }
+            random -= w;
+          }
+        } else {
+          winIndex = Math.floor(Math.random() * total);
+        }
+      } else {
+        winIndex = Math.floor(Math.random() * total);
+      }
+    }
+    
+    const sectorAngle = 360 / total;
+    const itemCenterAngle = (winIndex * sectorAngle) + (sectorAngle / 2);
+    
+    const baseRotations = 5 * 360;
+    const currentBaseAngle = Math.floor(rotateAngle / 360) * 360;
+    rotateAngle = currentBaseAngle + baseRotations + (360 - itemCenterAngle);
+    
+    const wheel = document.getElementById('wheel');
+    wheel.style.transition = 'transform 3s cubic-bezier(0.25, 0.1, 0.25, 1)';
+    wheel.style.transform = `rotate(${rotateAngle}deg)`;
+    
+    resultTimeout = setTimeout(() => {
+      isSpinning = false;
+      showResult(winIndex);
+    }, 3000);
+  }
+
+  function showResult(index) {
+    const item = currentRoulette.items[index];
+    document.getElementById('result-title').innerText = currentType === 'reward' ? '🎉 恭喜获得奖励' : '⚠️ 接受惩罚';
+    const content = document.getElementById('result-content');
+    content.innerText = item.text;
+    content.style.color = item.color;
+    document.getElementById('result-mask').classList.add('show');
+    if (navigator.vibrate) navigator.vibrate(50);
+  }
+
+  function closeResult() {
+    document.getElementById('result-mask').classList.remove('show');
+  }
+
+  // 初始化
+  renderWheel();
+
+  // ================== 管理与编辑功能 ==================
+  let manageList = [];
+  let editingRoulette = null;
+  const predefinedColors = ['#FFD700', '#FF8C00', '#FF6347', '#32CD32', '#1E90FF', '#9370DB', '#FF69B4', '#20B2AA', '#F08080', '#87CEFA', '#98FB98', '#DDA0DD'];
+
+  function goToManage() {
+    if (isSpinning) return;
+    document.getElementById('main-page').classList.remove('active');
+    document.getElementById('manage-page').classList.add('active');
+    renderManageList();
+  }
+
+  function closeManage() {
+    document.getElementById('manage-page').classList.remove('active');
+    document.getElementById('main-page').classList.add('active');
+    renderWheel();
+  }
+
+  function renderManageList() {
+    const data = getRoulettes();
+    manageList = data.filter(r => r.type === currentType);
+    const targetId = localStorage.getItem(currentType === 'reward' ? 'currentRewardId' : 'currentPunishmentId') || manageList[0].id;
+    
+    let html = '';
+    manageList.forEach(item => {
+      const isActive = item.id === targetId;
+      html += `
+        <div class="manage-item ${isActive ? 'active' : ''}" onclick="selectRoulette('${item.id}')">
+          <div class="manage-item-info">
+            <span class="manage-item-name">${item.name}</span>
+            ${item.isDefault ? '<span class="manage-item-tag">默认</span>' : ''}
+          </div>
+          <div class="manage-item-actions" onclick="event.stopPropagation()">
+            <button class="btn-edit" onclick="goToEdit('${item.id}')">编辑</button>
+            ${!item.isDefault ? `<button class="btn-delete" onclick="deleteRoulette('${item.id}')">删除</button>` : ''}
+          </div>
+        </div>
+      `;
+    });
+    document.getElementById('manage-list-container').innerHTML = html;
+    document.getElementById('manage-title').innerText = currentType === 'reward' ? '奖励转盘' : '惩罚转盘';
+    document.getElementById('btn-add-roulette').innerText = `+ 新增${currentType === 'reward' ? '奖励' : '惩罚'}转盘`;
+  }
+
+  function selectRoulette(id) {
+    localStorage.setItem(currentType === 'reward' ? 'currentRewardId' : 'currentPunishmentId', id);
+    closeManage();
+  }
+
+  function deleteRoulette(id) {
+    if(confirm('确定要删除这个转盘吗？')) {
+      let data = getRoulettes();
+      data = data.filter(r => r.id !== id);
+      localStorage.setItem('roulettes', JSON.stringify(data));
+      
+      const currentKey = currentType === 'reward' ? 'currentRewardId' : 'currentPunishmentId';
+      if (localStorage.getItem(currentKey) === id) {
+        const defaultItem = data.find(r => r.type === currentType && r.isDefault);
+        if (defaultItem) localStorage.setItem(currentKey, defaultItem.id);
+      }
+      renderManageList();
+    }
+  }
+
+  function goToEdit(id) {
+    document.getElementById('manage-page').classList.remove('active');
+    document.getElementById('edit-page').classList.add('active');
+    
+    if (id) {
+      const data = getRoulettes();
+      const r = data.find(r => r.id === id);
+      editingRoulette = JSON.parse(JSON.stringify(r));
+      document.getElementById('edit-title').innerText = '编辑转盘';
+    } else {
+      editingRoulette = {
+        id: '',
+        name: '',
+        type: currentType,
+        isDefault: false,
+        items: [
+          { text: '', color: getRandomColor() },
+          { text: '', color: getRandomColor() }
+        ]
+      };
+      document.getElementById('edit-title').innerText = '新增转盘';
+    }
+    renderEditForm();
+  }
+
+  function closeEdit() {
+    document.getElementById('edit-page').classList.remove('active');
+    document.getElementById('manage-page').classList.add('active');
+  }
+
+  function renderEditForm() {
+    document.getElementById('edit-name-input').value = editingRoulette.name;
+    document.getElementById('edit-items-count').innerText = `转盘选项 (${editingRoulette.items.length}个)`;
+    
+    let html = '';
+    editingRoulette.items.forEach((item, index) => {
+      html += `
+        <div class="edit-item-row">
+          <div class="edit-color-picker" style="background-color: ${item.color}" onclick="changeEditColor(${index})"></div>
+          <input class="edit-item-input" value="${item.text}" oninput="onEditItemInput(event, ${index})" placeholder="请输入内容" />
+          ${editingRoulette.items.length > 2 ? `<button class="btn-del-item" onclick="removeEditItem(${index})">×</button>` : ''}
+        </div>
+      `;
+    });
+    document.getElementById('edit-items-container').innerHTML = html;
+  }
+
+  function getRandomColor() {
+    return predefinedColors[Math.floor(Math.random() * predefinedColors.length)];
+  }
+
+  function onEditNameInput(e) {
+    editingRoulette.name = e.target.value;
+  }
+
+  function onEditItemInput(e, index) {
+    editingRoulette.items[index].text = e.target.value;
+  }
+
+  function changeEditColor(index) {
+    const currentColor = editingRoulette.items[index].color;
+    let cIdx = predefinedColors.indexOf(currentColor);
+    cIdx = (cIdx + 1) % predefinedColors.length;
+    editingRoulette.items[index].color = predefinedColors[cIdx];
+    renderEditForm();
+  }
+
+  function addEditItem() {
+    if (editingRoulette.items.length >= 12) {
+      alert('最多支持12个选项');
+      return;
+    }
+    editingRoulette.items.push({ text: '', color: getRandomColor() });
+    renderEditForm();
+  }
+
+  function removeEditItem(index) {
+    if (editingRoulette.items.length <= 2) {
+      alert('至少需要2个选项');
+      return;
+    }
+    editingRoulette.items.splice(index, 1);
+    renderEditForm();
+  }
+
+  function saveRoulette() {
+    if (!editingRoulette.name.trim()) {
+      alert('请输入转盘名称');
+      return;
+    }
+    for (let i = 0; i < editingRoulette.items.length; i++) {
+      if (!editingRoulette.items[i].text.trim()) {
+        alert(`第${i+1}个选项内容不能为空`);
+        return;
+      }
+    }
+    
+    let data = getRoulettes();
+    if (editingRoulette.id) {
+      const idx = data.findIndex(r => r.id === editingRoulette.id);
+      if (idx > -1) {
+        data[idx].name = editingRoulette.name;
+        data[idx].items = editingRoulette.items;
+      }
+    } else {
+      editingRoulette.id = Date.now().toString();
+      data.push(editingRoulette);
+      localStorage.setItem(currentType === 'reward' ? 'currentRewardId' : 'currentPunishmentId', editingRoulette.id);
+    }
+    localStorage.setItem('roulettes', JSON.stringify(data));
+    alert('保存成功');
+    closeEdit();
+    renderManageList();
+  }
+
+</script>
+
+</body>
+</html>

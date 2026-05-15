@@ -1,0 +1,5 @@
+feat(core): implement dual-platform roulette with hidden control
+
+Initialize the WeChat mini-program and web version of the kids reward and punishment roulette.
+Includes dual modes, custom sector colors with conic-gradient, and an advanced hidden control panel supporting sequence queue and custom weights.
+Update PRD documentation accordingly.

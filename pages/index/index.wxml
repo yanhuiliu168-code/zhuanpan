@@ -1,0 +1,87 @@
+<!--pages/index/index.wxml-->
+<view class="container {{currentType === 'reward' ? 'theme-reward' : 'theme-punishment'}}">
+  <!-- 模式切换 -->
+  <view class="mode-switch">
+    <view class="switch-item {{currentType === 'reward' ? 'active' : ''}}" bindtap="switchMode" data-type="reward">奖励模式</view>
+    <view class="switch-item {{currentType === 'punishment' ? 'active' : ''}}" bindtap="switchMode" data-type="punishment">惩罚模式</view>
+  </view>
+
+  <!-- 当前转盘名称 -->
+  <view class="roulette-title" bindtap="goToManage">
+    <text>{{currentRoulette.name}}</text>
+    <text class="arrow">切换 ></text>
+  </view>
+
+  <!-- 转盘区域 -->
+  <view class="roulette-container">
+    <view class="roulette-bg">
+      <view class="roulette-wheel" style="transform: rotate({{rotateAngle}}deg); transition: {{transitionDuration}}ms {{transitionTimingFunction}}; background: {{conicGradient}};">
+        
+        <!-- 分割线 -->
+        <view class="wheel-line" wx:for="{{currentRoulette.items}}" wx:key="index" style="transform: rotate({{index * (360 / currentRoulette.items.length)}}deg);"></view>
+        
+        <!-- 文字容器 -->
+        <view class="wheel-text-container">
+          <view class="wheel-text" wx:for="{{currentRoulette.items}}" wx:key="index" style="transform: rotate({{index * (360 / currentRoulette.items.length) + (180 / currentRoulette.items.length)}}deg);">
+            <text class="text-content">{{item.text}}</text>
+          </view>
+        </view>
+      </view>
+      <!-- 指针和中心按钮 -->
+      <view class="roulette-pointer"></view>
+      <view class="roulette-btn" bindtap="onCenterClick">
+        <text>开始</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 隐藏控制面板 -->
+  <view class="control-panel-mask" wx:if="{{showControlPanel}}">
+    <view class="control-panel">
+      <view class="panel-title">设定结果序列与权重（仅家长可见）</view>
+      
+      <view class="panel-mode">
+        默认抽取：
+        <radio-group bindchange="onModeChange" class="mode-group">
+          <label><radio value="random" checked="{{tempFallbackMode === 'random'}}"/>纯随机</label>
+          <label><radio value="weight" checked="{{tempFallbackMode === 'weight'}}"/>按权重</label>
+        </radio-group>
+      </view>
+
+      <view class="panel-queue">
+        当前序列：
+        <text wx:if="{{tempTargetQueue.length === 0}}" style="color: #999">空</text>
+        <block wx:for="{{tempTargetQueue}}" wx:key="index">
+          <text class="queue-item">{{currentRoulette.items[item].text}}</text>
+          <text wx:if="{{index < tempTargetQueue.length - 1}}"> ➔ </text>
+        </block>
+      </view>
+
+      <scroll-view scroll-y class="panel-list">
+        <view class="panel-item-row" wx:for="{{currentRoulette.items}}" wx:key="index">
+          <view class="item-name" bindtap="selectTarget" data-index="{{index}}">
+            {{item.text}} <text class="add-tip">(点我加入序列)</text>
+          </view>
+          <view class="item-weight" wx:if="{{tempFallbackMode === 'weight'}}">
+            权重: <input type="number" class="weight-input" value="{{tempWeights[index]}}" bindinput="onWeightInput" data-index="{{index}}" />
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="panel-actions">
+        <button class="btn-clear" bindtap="clearTarget">清空</button>
+        <button class="btn-cancel" bindtap="closeControlPanel">取消</button>
+        <button class="btn-confirm" bindtap="confirmControlTarget">确定</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 结果弹窗 -->
+  <view class="result-mask" wx:if="{{showResult}}">
+    <view class="result-dialog">
+      <view class="result-title">{{currentType === 'reward' ? '🎉 恭喜获得奖励' : '⚠️ 接受惩罚'}}</view>
+      <view class="result-content" style="color: {{resultItem.color}}">{{resultItem.text}}</view>
+      <button class="btn-close" bindtap="closeResult">确定</button>
+    </view>
+  </view>
+</view>
