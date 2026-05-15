@@ -11,7 +11,7 @@
         <!-- 文字容器 -->
         <view class="wheel-text-container">
           <view class="wheel-text" wx:for="{{currentRoulette.items}}" wx:key="index" style="transform: rotate({{index * (360 / currentRoulette.items.length) + (180 / currentRoulette.items.length)}}deg);">
-            <text class="text-content">{{item.text}}</text>
+            <text class="text-content" style="font-size: {{item.fontSize}};">{{item.text}}</text>
           </view>
         </view>
       </view>

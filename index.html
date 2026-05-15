@@ -339,8 +339,14 @@
       gradientStr += `${item.color} ${startDeg}deg ${endDeg}deg`;
       if (index < total - 1) gradientStr += ', ';
 
+      // 动态计算字体大小以自适应文字长度和选项数量
+      let fSize = 0.36;
+      if (total > 6) fSize -= (total - 6) * 0.02;
+      if (item.text.length > 4) fSize -= (item.text.length - 4) * 0.015;
+      fSize = Math.max(0.2, Math.min(fSize, 0.4));
+
       linesHtml += `<div class="wheel-line" style="transform: rotate(${startDeg}deg);"></div>`;
-      textsHtml += `<div class="wheel-text" style="transform: rotate(${startDeg + 180/total}deg);"><span class="text-content">${item.text}</span></div>`;
+      textsHtml += `<div class="wheel-text" style="transform: rotate(${startDeg + 180/total}deg);"><span class="text-content" style="font-size: ${fSize}rem;">${item.text}</span></div>`;
     });
     gradientStr += ')';
 

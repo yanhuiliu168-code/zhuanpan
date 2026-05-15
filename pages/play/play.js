@@ -51,6 +51,12 @@ Page({
         if (index < total - 1) {
           gradientStr += ', ';
         }
+        
+        // 动态计算字体大小以自适应文字长度和选项数量
+        let fSize = 36;
+        if (total > 6) fSize -= (total - 6) * 2;
+        if (item.text.length > 4) fSize -= (item.text.length - 4) * 1.5;
+        item.fontSize = Math.max(20, Math.min(fSize, 40)) + 'rpx';
       });
       gradientStr += ')';
 
