@@ -1,13 +1,13 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/manage/manage",
+    "pages/play/play",
     "pages/edit/edit"
   ],
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "儿童奖惩转盘",
+    "navigationBarTitleText": "转盘小助手",
     "navigationBarTextStyle": "black"
   },
   "style": "v2",

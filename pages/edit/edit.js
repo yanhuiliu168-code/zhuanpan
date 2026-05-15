@@ -1,150 +1,106 @@
 // pages/edit/edit.js
 Page({
   data: {
-    id: '',
-    type: 'reward',
-    name: '',
-    items: [],
-    
-    // 预设颜色池
-    colors: [
-      '#FFD700', '#FF8C00', '#FF6347', '#32CD32', '#1E90FF', '#9370DB',
-      '#FF69B4', '#20B2AA', '#F08080', '#87CEFA', '#98FB98', '#DDA0DD'
-    ]
+    roulette: null,
+    colorList: ['#FF7F50', '#6495ED', '#FFB6C1', '#32CD32', '#FFA500', '#9370DB', '#4682B4', '#D2B48C', '#778899', '#5F9EA0', '#BC8F8F', '#708090']
   },
 
   onLoad(options) {
-    const type = options.type || 'reward';
-    this.setData({ type });
-
     if (options.id) {
-      // 编辑模式
-      this.setData({ id: options.id });
-      wx.setNavigationBarTitle({ title: '编辑转盘' });
-      this.loadRoulette(options.id);
+      const roulettes = wx.getStorageSync('roulettes') || [];
+      const roulette = roulettes.find(r => r.id === options.id);
+      if (roulette) {
+        wx.setNavigationBarTitle({ title: '编辑转盘' });
+        this.setData({ roulette: JSON.parse(JSON.stringify(roulette)) });
+      }
     } else {
-      // 新增模式
       wx.setNavigationBarTitle({ title: '新增转盘' });
-      this.initNewRoulette();
-    }
-  },
-
-  loadRoulette(id) {
-    const allRoulettes = wx.getStorageSync('roulettes') || [];
-    const roulette = allRoulettes.find(r => r.id === id);
-    if (roulette) {
       this.setData({
-        name: roulette.name,
-        // 深拷贝items，避免直接修改缓存
-        items: JSON.parse(JSON.stringify(roulette.items))
+        roulette: {
+          id: Date.now().toString(),
+          name: '',
+          isDefault: false,
+          fallbackMode: 'random',
+          items: [
+            { text: '选项1', color: this.data.colorList[0], weight: 1 },
+            { text: '选项2', color: this.data.colorList[1], weight: 1 }
+          ]
+        }
       });
     }
   },
 
-  initNewRoulette() {
-    // 默认2个选项
-    this.setData({
-      name: '',
-      items: [
-        { text: '', color: this.getRandomColor() },
-        { text: '', color: this.getRandomColor() }
-      ]
-    });
-  },
-
-  getRandomColor() {
-    const idx = Math.floor(Math.random() * this.data.colors.length);
-    return this.data.colors[idx];
-  },
-
   onNameInput(e) {
-    this.setData({ name: e.detail.value });
+    this.setData({ 'roulette.name': e.detail.value });
   },
 
   onItemInput(e) {
     const index = e.currentTarget.dataset.index;
-    const value = e.detail.value;
-    const key = `items[${index}].text`;
-    this.setData({ [key]: value });
-  },
-
-  addItem() {
-    if (this.data.items.length >= 12) {
-      wx.showToast({ title: '最多支持12个选项', icon: 'none' });
-      return;
-    }
-    const items = this.data.items;
-    items.push({ text: '', color: this.getRandomColor() });
-    this.setData({ items });
-  },
-
-  deleteItem(e) {
-    if (this.data.items.length <= 2) {
-      wx.showToast({ title: '至少需要2个选项', icon: 'none' });
-      return;
-    }
-    const index = e.currentTarget.dataset.index;
-    const items = this.data.items;
-    items.splice(index, 1);
-    this.setData({ items });
+    this.setData({
+      [`roulette.items[${index}].text`]: e.detail.value
+    });
   },
 
   changeColor(e) {
     const index = e.currentTarget.dataset.index;
-    const items = this.data.items;
-    // 简单循环切换颜色
-    const currentColor = items[index].color;
-    let colorIndex = this.data.colors.indexOf(currentColor);
-    colorIndex = (colorIndex + 1) % this.data.colors.length;
+    const currentColor = this.data.roulette.items[index].color;
+    let colorIdx = this.data.colorList.indexOf(currentColor);
+    colorIdx = (colorIdx + 1) % this.data.colorList.length;
     
-    const key = `items[${index}].color`;
-    this.setData({ [key]: this.data.colors[colorIndex] });
+    this.setData({
+      [`roulette.items[${index}].color`]: this.data.colorList[colorIdx]
+    });
   },
 
-  saveRoulette() {
-    if (!this.data.name.trim()) {
+  addItem() {
+    const items = this.data.roulette.items;
+    if (items.length >= 12) {
+      wx.showToast({ title: '最多支持12个选项', icon: 'none' });
+      return;
+    }
+    items.push({ 
+      text: '', 
+      color: this.data.colorList[items.length % this.data.colorList.length],
+      weight: 1
+    });
+    this.setData({ 'roulette.items': items });
+  },
+
+  deleteItem(e) {
+    const index = e.currentTarget.dataset.index;
+    const items = this.data.roulette.items;
+    if (items.length <= 2) {
+      wx.showToast({ title: '最少需要2个选项', icon: 'none' });
+      return;
+    }
+    items.splice(index, 1);
+    this.setData({ 'roulette.items': items });
+  },
+
+  save() {
+    const { roulette } = this.data;
+    if (!roulette.name.trim()) {
       wx.showToast({ title: '请输入转盘名称', icon: 'none' });
       return;
     }
-    
-    for (let i = 0; i < this.data.items.length; i++) {
-      if (!this.data.items[i].text.trim()) {
-        wx.showToast({ title: `第${i+1}个选项内容不能为空`, icon: 'none' });
+    for (let item of roulette.items) {
+      if (!item.text.trim()) {
+        wx.showToast({ title: '选项内容不能为空', icon: 'none' });
         return;
       }
     }
 
-    let allRoulettes = wx.getStorageSync('roulettes') || [];
+    const roulettes = wx.getStorageSync('roulettes') || [];
+    const index = roulettes.findIndex(r => r.id === roulette.id);
     
-    if (this.data.id) {
-      // 更新
-      const index = allRoulettes.findIndex(r => r.id === this.data.id);
-      if (index > -1) {
-        // 不修改isDefault等其他属性
-        allRoulettes[index].name = this.data.name;
-        allRoulettes[index].items = this.data.items;
-      }
+    if (index > -1) {
+      roulettes[index] = roulette;
     } else {
-      // 新增
-      const newRoulette = {
-        id: Date.now().toString(),
-        name: this.data.name,
-        type: this.data.type,
-        isDefault: false,
-        items: this.data.items
-      };
-      allRoulettes.push(newRoulette);
-      
-      // 自动设置为当前选中
-      const key = this.data.type === 'reward' ? 'currentRewardId' : 'currentPunishmentId';
-      wx.setStorageSync(key, newRoulette.id);
+      roulettes.push(roulette);
     }
     
-    wx.setStorageSync('roulettes', allRoulettes);
-    
-    wx.showToast({ title: '保存成功', icon: 'success' });
-    setTimeout(() => {
-      wx.navigateBack();
-    }, 1500);
+    wx.setStorageSync('roulettes', roulettes);
+    wx.showToast({ title: '保存成功' });
+    setTimeout(() => { wx.navigateBack(); }, 1500);
   }
-})
+});
